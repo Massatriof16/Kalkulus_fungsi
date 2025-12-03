@@ -9,7 +9,7 @@
 // Config - Ubah sesuai kebutuhan
 const A = 11;            // kunci a (harus gcd(a,256)=1) - default 11
 const N = 256;           // modulus
-const BOT_TOKEN = "ISI_TOKEN_BOT_DI_SINI"; // <-- isi token bot kalian di sini (untuk demo)
+const BOT_TOKEN = "7612466712:AAGoSKw-S0c60u9ijt9hzYtw09dc3aauayQ"; // <-- isi token bot kalian di sini (untuk demo)
 /////////////////////
 
 // Utilities: DOM
