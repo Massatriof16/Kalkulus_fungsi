@@ -1,128 +1,131 @@
-<!doctype html>
-<html lang="id">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Aplikasi Kriptografi Linear (ax+b mod n)</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>Modular Encryption Tool</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <header>
-    <h1>Aplikasi Kriptografi Linear (ax + b) mod 256</h1>
-    <p class="note">Demo client-only. Jangan gunakan token bot produksi di halaman publik.</p>
-  </header>
 
-  <main>
-    <nav class="tabs">
-      <button data-tab="text" class="tab-btn active">Teks</button>
-      <button data-tab="file" class="tab-btn">File</button>
-      <button data-tab="telegram" class="tab-btn">Telegram Bot</button>
-    </nav>
+<header>
+    <h1>ModCipher — Modular Encryption Suite</h1>
+</header>
 
-    <!-- PIN area (shared) -->
-    <section class="pin-area">
-      <label>PIN (b): <input id="pinInput" type="number" min="0" /></label>
-      <button id="savePinBtn">Simpan PIN</button>
-      <button id="resetPinBtn">Reset PIN</button>
-      <span id="pinMsg" class="small-msg"></span>
+<nav class="tabs">
+    <button class="tab-btn active" data-tab="textTab">🔐 Text</button>
+    <button class="tab-btn" data-tab="fileTab">📄 File</button>
+    <button class="tab-btn" data-tab="telegramTab">🤖 Telegram</button>
+</nav>
+
+<main>
+
+    <!-- =======================
+         TAB 1 — TEXT
+    ========================= -->
+    <section id="textTab" class="tab-content active">
+
+        <div class="card">
+            <h2>PIN (b)</h2>
+            <input type="number" id="pinInput" placeholder="Enter PIN">
+            <div class="btn-group">
+                <button onclick="savePIN()">Save PIN</button>
+                <button class="danger" onclick="resetPIN()">Reset PIN</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Encrypt Text</h3>
+            <textarea id="plainText" placeholder="Enter text..."></textarea>
+            <button onclick="encryptText()">Encrypt</button>
+        </div>
+
+        <div class="card">
+            <h3>Decrypt Text</h3>
+            <textarea id="cipherText" placeholder="Enter encrypted text..."></textarea>
+            <button onclick="decryptText()">Decrypt</button>
+        </div>
+
+        <div class="card output">
+            <h3>Output</h3>
+            <pre id="textOutput"></pre>
+        </div>
+
     </section>
 
-    <!-- TABS -->
-    <section id="tab-text" class="tab active">
-      <h2>Enkripsi & Dekripsi Teks</h2>
+    <!-- =======================
+         TAB 2 — FILE
+    ========================= -->
+    <section id="fileTab" class="tab-content">
 
-      <div class="group">
-        <label>Masukkan teks (encrypt):</label>
-        <textarea id="plainInput" rows="4" placeholder="Tulis teks..."></textarea>
-        <div class="actions">
-          <button id="encryptTextBtn">Encrypt</button>
+        <div class="card">
+            <h2>PIN synchronized automatically ✓</h2>
         </div>
-      </div>
 
-      <div class="group">
-        <label>Masukkan ciphertext (Base64) untuk dekripsi:</label>
-        <textarea id="cipherInput" rows="4" placeholder="Paste ciphertext (Base64)..."></textarea>
-        <div class="actions">
-          <button id="decryptTextBtn">Decrypt</button>
-        </div>
-      </div>
+        <div class="card">
+            <h3>Encrypt File</h3>
+            <input type="file" id="encryptFileInput">
+            <button onclick="encryptFile()">Encrypt File</button>
 
-      <div class="output">
-        <h3>Output</h3>
-        <pre id="textOutput" class="output-box"></pre>
-        <div class="small-actions">
-          <button id="copyTextOutput">Copy</button>
-          <button id="clearTextOutput">Clear</button>
+            <div id="encryptProgress" class="progress hidden">
+                <p id="encryptProgressLabel">Encrypting...</p>
+                <div class="progress-bg">
+                    <div id="encryptBar" class="progress-fill"></div>
+                </div>
+                <p id="encryptPercent">0%</p>
+            </div>
+
+            <a id="encryptDownload" class="hidden download-btn">Download Encrypted File</a>
         </div>
-      </div>
+
+        <div class="card">
+            <h3>Decrypt File</h3>
+            <input type="file" id="decryptFileInput">
+            <button onclick="decryptFile()">Decrypt File</button>
+
+            <div id="decryptProgress" class="progress hidden">
+                <p id="decryptProgressLabel">Decrypting...</p>
+                <div class="progress-bg">
+                    <div id="decryptBar" class="progress-fill"></div>
+                </div>
+                <p id="decryptPercent">0%</p>
+            </div>
+
+            <a id="decryptDownload" class="hidden download-btn">Download Decrypted File</a>
+        </div>
+
     </section>
 
-    <section id="tab-file" class="tab">
-      <h2>Enkripsi & Dekripsi File</h2>
+    <!-- =======================
+         TAB 3 — TELEGRAM
+    ========================= -->
+    <section id="telegramTab" class="tab-content">
 
-      <div class="group">
-        <label>Upload file untuk encrypt:</label>
-        <input type="file" id="fileEncryptInput" />
-        <div class="actions">
-          <button id="encryptFileBtn">Encrypt File</button>
+        <div class="card">
+            <h2>Chat ID Settings</h2>
+            <input type="text" id="chatIdInput" placeholder="Enter Telegram Chat ID">
+            <div class="btn-group">
+                <button onclick="saveChatID()">Save</button>
+                <button class="danger" onclick="resetChatID()">Reset</button>
+            </div>
         </div>
-        <div class="small-msg" id="encFileMsg"></div>
-      </div>
 
-      <div class="group">
-        <label>Upload file (.enc) untuk decrypt:</label>
-        <input type="file" id="fileDecryptInput" />
-        <div class="actions">
-          <button id="decryptFileBtn">Decrypt File</button>
+        <div class="card">
+            <h3>Send Encrypted Message</h3>
+            <textarea id="telegramText" placeholder="Enter message..."></textarea>
+            <button onclick="sendEncryptedText()">Encrypt & Send</button>
         </div>
-        <div class="small-msg" id="decFileMsg"></div>
-      </div>
 
-      <div class="output">
-        <h3>Download</h3>
-        <div id="fileDownloadArea"></div>
-      </div>
+        <div class="card">
+            <h3>Send Encrypted File</h3>
+            <input type="file" id="telegramFileInput">
+            <button onclick="sendEncryptedFile()">Encrypt & Send File</button>
+        </div>
+
     </section>
 
-    <section id="tab-telegram" class="tab">
-      <h2>Kirimi lewat Telegram Bot</h2>
-      <p class="small-msg">Masukkan Chat ID penerima. Untuk dapat chat_id, penerima harus memulai chat dengan bot kalian.</p>
+</main>
 
-      <div class="group">
-        <label>Chat ID:</label>
-        <input id="chatIdInput" type="text" placeholder="Masukkan chat id (angka)"/>
-        <div class="actions">
-          <button id="saveChatBtn">Simpan Chat ID</button>
-          <button id="resetChatBtn">Reset Chat ID</button>
-        </div>
-        <span id="chatMsg" class="small-msg"></span>
-      </div>
-
-      <div class="group">
-        <label>Pesan teks untuk kirim:</label>
-        <textarea id="telegramPlain" rows="3" placeholder="Tulis pesan..."></textarea>
-        <div class="actions">
-          <button id="sendTelegramTextBtn">Encrypt & Send</button>
-        </div>
-        <div id="telegramTextMsg" class="small-msg"></div>
-      </div>
-
-      <div class="group">
-        <label>File untuk kirim (akan dienkripsi):</label>
-        <input type="file" id="telegramFileInput" />
-        <div class="actions">
-          <button id="sendTelegramFileBtn">Encrypt File & Send</button>
-        </div>
-        <div id="telegramFileMsg" class="small-msg"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer>
-    <small>Project demo — Enkripsi linear modular + Base64. Token bot bersifat sensitif.</small>
-  </footer>
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
