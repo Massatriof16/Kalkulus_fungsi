@@ -1,211 +1,99 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ModCipher — Modular Encryption Suite</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kriptografi Linear</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-inner">
-      <h1>ModCipher</h1>
-      <p class="subtitle">Modular Encryption Suite — Enkripsi teks, file & kirim lewat Telegram</p>
+
+<div class="header">
+    <h1>Sistem Kriptografi Linear</h1>
+    <p>(ax + b) mod n — Encryption & Decryption</p>
+</div>
+
+<div class="tabs">
+    <button class="tab-btn active" data-tab="text-tab">Teks</button>
+    <button class="tab-btn" data-tab="file-tab">Dokumen</button>
+    <button class="tab-btn" data-tab="bot-tab">Bot Telegram</button>
+</div>
+
+<div class="tab-content">
+
+    <!-- ========================= TAB TEKS ========================= -->
+    <div id="text-tab" class="tab active">
+
+        <h2>Enkripsi & Dekripsi Teks</h2>
+
+        <label>PIN (b):</label>
+        <input type="number" id="pin-text" placeholder="Masukkan PIN">
+        <button onclick="savePin()">Simpan PIN</button>
+        <button onclick="resetPin()">Reset PIN</button>
+
+        <hr>
+
+        <label>Teks untuk Enkripsi:</label>
+        <textarea id="text-en" placeholder="Masukkan teks..."></textarea>
+        <button onclick="encryptText()">Enkripsi</button>
+
+        <label>Teks untuk Dekripsi:</label>
+        <textarea id="text-de" placeholder="Masukkan teks terenkripsi..."></textarea>
+        <button onclick="decryptText()">Dekripsi</button>
+
+        <h3>Output:</h3>
+        <textarea id="text-output" readonly></textarea>
     </div>
-  </header>
 
-  <div class="divider"></div>
+    <!-- ========================= TAB FILE ========================= -->
+    <div id="file-tab" class="tab">
 
-  <nav class="nav-tabs" role="tablist" aria-label="Main tabs">
-    <button class="tab large active" data-target="tab-text" role="tab" aria-selected="true">🔐 ENCRYPT TEXT</button>
-    <button class="tab large" data-target="tab-file" role="tab" aria-selected="false">📄 FILE ENCRYPTION</button>
-    <button class="tab large" data-target="tab-telegram" role="tab" aria-selected="false">🤖 TELEGRAM BOT</button>
-  </nav>
+        <h2>Enkripsi & Dekripsi Dokumen</h2>
 
-  <main class="container">
-    <!-- PIN shared -->
-    <section class="card pin-card">
-      <div class="pin-left">
-        <label class="label">Your PIN (b)</label>
-        <input id="pinInput" type="number" placeholder="Enter PIN (numeric)" />
-      </div>
-      <div class="pin-actions">
-        <button id="savePinBtn" class="btn primary">Save PIN</button>
-        <button id="resetPinBtn" class="btn ghost">Reset</button>
-      </div>
-      <div class="pin-note" id="pinNote">PIN not saved</div>
-    </section>
+        <label>PIN (b):</label>
+        <input type="number" id="pin-file" placeholder="Masukkan PIN">
 
-    <!-- TAB CONTENT: TEXT -->
-    <section id="tab-text" class="tab-content active">
-      <div class="columns">
-        <div class="col">
-          <div class="card">
-            <h3 class="card-title">Encrypt — Plaintext</h3>
-            <textarea id="plainInput" class="large-text" placeholder="Type your message here..."></textarea>
-            <div class="row-gap">
-              <button id="encryptTextBtn" class="btn primary large">Encrypt</button>
-            </div>
-          </div>
+        <hr>
 
-          <div class="card">
-            <h3 class="card-title">Decrypt — Ciphertext (Base64)</h3>
-            <textarea id="cipherInput" class="large-text" placeholder="Paste ciphertext (Base64) here..."></textarea>
-            <div class="row-gap">
-              <button id="decryptTextBtn" class="btn primary large">Decrypt</button>
-            </div>
-          </div>
-        </div>
+        <label>Upload File untuk Enkripsi:</label>
+        <input type="file" id="file-en">
+        <button onclick="encryptFile()">Enkripsi File</button>
 
-        <div class="col">
-          <div class="card output-card">
-            <h3 class="card-title">Output</h3>
-            <pre id="textOutput" class="output-box" aria-live="polite"></pre>
-            <div class="row-actions">
-              <button id="copyTextBtn" class="btn ghost">Copy</button>
-              <button id="clearTextBtn" class="btn ghost">Clear</button>
-            </div>
-          </div>
+        <label>Upload File untuk Dekripsi:</label>
+        <input type="file" id="file-de">
+        <button onclick="decryptFile()">Dekripsi File</button>
 
-          <div class="card info-card">
-            <h4>Info</h4>
-            <ul>
-              <li>Encryption: <code>E(x) = (a·x + b) mod 256</code></li>
-              <li>Decryption: <code>D(y) = a⁻¹ · (y - b) mod 256</code></li>
-              <li>Result encoded in Base64 for safe transport</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
+        <h3>Download Hasil:</h3>
+        <a id="download-link" style="display:none;">Download</a>
+    </div>
 
-    <!-- TAB CONTENT: FILE -->
-    <section id="tab-file" class="tab-content">
-      <div class="columns">
-        <div class="col">
-          <div class="card">
-            <h3 class="card-title">Encrypt File</h3>
-            <div class="file-drop">
-              <input id="fileEncryptInput" type="file" />
-            </div>
-            <div class="row-gap">
-              <button id="encryptFileBtn" class="btn primary large">Encrypt File</button>
-            </div>
+    <!-- ========================= TAB BOT ========================= -->
+    <div id="bot-tab" class="tab">
 
-            <div id="encryptProgress" class="progress-wrap hidden">
-              <div class="progress-label">Encrypting file...</div>
-              <div class="progress-bar">
-                <div id="encryptBar" class="progress-fill"></div>
-              </div>
-              <div id="encryptPct" class="progress-pct">0%</div>
-            </div>
+        <h2>Bot Telegram</h2>
 
-            <a id="downloadEnc" class="btn success hidden" download>Download Encrypted</a>
-          </div>
+        <label>PIN (b):</label>
+        <input type="number" id="pin-bot" placeholder="PIN">
 
-          <div class="card">
-            <h3 class="card-title">Decrypt File</h3>
-            <div class="file-drop">
-              <input id="fileDecryptInput" type="file" />
-            </div>
-            <div class="row-gap">
-              <button id="decryptFileBtn" class="btn primary large">Decrypt File</button>
-            </div>
+        <label>Chat ID:</label>
+        <input type="text" id="chat-id" placeholder="Masukkan Chat ID">
+        <button onclick="saveChatID()">Simpan</button>
+        <button onclick="resetChatID()">Reset</button>
 
-            <div id="decryptProgress" class="progress-wrap hidden">
-              <div class="progress-label">Decrypting file...</div>
-              <div class="progress-bar">
-                <div id="decryptBar" class="progress-fill"></div>
-              </div>
-              <div id="decryptPct" class="progress-pct">0%</div>
-            </div>
+        <hr>
 
-            <a id="downloadDec" class="btn success hidden" download>Download Decrypted</a>
-          </div>
-        </div>
+        <label>Pesan untuk Dikirim:</label>
+        <textarea id="bot-text"></textarea>
+        <button onclick="sendBotText()">Kirim Pesan</button>
 
-        <div class="col">
-          <div class="card output-card">
-            <h3 class="card-title">File Output / Log</h3>
-            <pre id="fileLog" class="output-box" aria-live="polite">No file operations yet.</pre>
-            <div class="row-actions">
-              <button id="clearFileLogBtn" class="btn ghost">Clear Log</button>
-            </div>
-          </div>
+        <label>Kirim File:</label>
+        <input type="file" id="bot-file">
+        <button onclick="sendBotFile()">Kirim File</button>
+    </div>
 
-          <div class="card info-card">
-            <h4>Notes</h4>
-            <ul>
-              <li>Files handled as raw bytes (0–255).</li>
-              <li>Encrypted file is Base64 text to ensure safe transfer (when sending via chat/clipboard).</li>
-              <li>Large files processed in chunks; a progress bar shows status.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
+</div>
 
-    <!-- TAB CONTENT: TELEGRAM -->
-    <section id="tab-telegram" class="tab-content">
-      <div class="columns">
-        <div class="col">
-          <div class="card">
-            <h3 class="card-title">Chat ID</h3>
-            <input id="chatIdInput" type="text" placeholder="Enter Telegram Chat ID (numeric)" />
-            <div class="row-gap">
-              <button id="saveChatBtn" class="btn primary">Save Chat ID</button>
-              <button id="resetChatBtn" class="btn ghost">Reset</button>
-            </div>
-            <div id="chatNote" class="pin-note">No Chat ID saved</div>
-          </div>
+<script src="script.js"></script>
 
-          <div class="card">
-            <h3 class="card-title">Send Encrypted Text</h3>
-            <textarea id="tgPlain" class="large-text" placeholder="Type message to send..."></textarea>
-            <div class="row-gap">
-              <button id="sendTgTextBtn" class="btn primary large">Encrypt & Send</button>
-            </div>
-            <div id="tgTextNote" class="pin-note">—</div>
-          </div>
-
-          <div class="card">
-            <h3 class="card-title">Send Encrypted File</h3>
-            <input id="tgFileInput" type="file" />
-            <div class="row-gap">
-              <button id="sendTgFileBtn" class="btn primary large">Encrypt & Send File</button>
-            </div>
-            <div id="tgFileNote" class="pin-note">—</div>
-          </div>
-        </div>
-
-        <div class="col">
-          <div class="card output-card">
-            <h3 class="card-title">Telegram Log</h3>
-            <pre id="tgLog" class="output-box" aria-live="polite">No telegram activity yet.</pre>
-            <div class="row-actions">
-              <button id="clearTgLogBtn" class="btn ghost">Clear Log</button>
-            </div>
-          </div>
-
-          <div class="card info-card">
-            <h4>How it works</h4>
-            <ol>
-              <li>Message/file encrypted client-side → encoded Base64.</li>
-              <li>Base64 ciphertext sent to Telegram Bot via <code>fetch()</code>.</li>
-              <li>Penerima decode & decrypt using known PIN.</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    </section>
-
- <!--   <footer class="footer">
-      <small>Client-side demo — do not expose production bot token in public repos.</small>
-    </footer>-->
-  </main>
-
-  <div id="toast" class="toast hidden"></div>
-
-  <script src="script.js"></script>
 </body>
 </html>
