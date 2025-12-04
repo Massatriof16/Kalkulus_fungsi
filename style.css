@@ -1,11 +1,14 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+    background: radial-gradient(circle at top right, #1e3c72, #2a5298, #0f2027);
     margin: 0;
     padding: 20px;
     color: #333;
     min-height: 100vh;
+    background-attachment: fixed;
+    color: #ffffff;
 }
+
 
 .container {
     max-width: 900px;
