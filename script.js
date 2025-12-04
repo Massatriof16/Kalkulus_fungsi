@@ -3,7 +3,7 @@
  ********************************************************************/
 const a = 11;
 const n = 256;
-const BOT_TOKEN = "ISI_TOKEN_BOT_DI_SINI"; // kamu isi sendiri
+const BOT_TOKEN = "7974427435:AAHsFppNpcM6Qb4J8iSbRFcI8Cph8tJA8tc"; // kamu isi sendiri
 
 /********************************************************************
  * GCD
