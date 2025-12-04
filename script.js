@@ -271,64 +271,95 @@ document.getElementById("decrypt-file").addEventListener("click", () => {
 });
 
 /********************************************************************
- * TELEGRAM (KIRIM TEKS & FILE)
+ * TELEGRAM (KIRIM TEKS & FILE) — Dengan Status Progress Lengkap
  ********************************************************************/
+function setTelegramStatus(msg) {
+    document.getElementById("telegram-status").textContent = msg;
+}
+
+// Simpan Chat ID
 document.getElementById("save-chat-id").addEventListener("click", () => {
     const cid = document.getElementById("chat-id-input").value;
     localStorage.setItem("chatId", cid);
+    setTelegramStatus("Chat ID tersimpan ✔");
     showNotification("Chat ID tersimpan");
 });
 
+// Reset Chat ID
 document.getElementById("reset-chat-id").addEventListener("click", () => {
     localStorage.removeItem("chatId");
     document.getElementById("chat-id-input").value = "";
+    setTelegramStatus("Chat ID dihapus ✔");
     showNotification("Chat ID direset");
 });
 
+// SEND TEXT
 document.getElementById("send-text").addEventListener("click", async () => {
     const pin = parseInt(localStorage.getItem("pin"));
     const cid = localStorage.getItem("chatId");
     const text = document.getElementById("telegram-text-input").value;
 
-    if (!pin || !cid) return showNotification("PIN atau Chat ID belum ada");
+    if (!pin || !cid) {
+        return setTelegramStatus("❌ PIN atau Chat ID belum diatur");
+    }
 
+    setTelegramStatus("🔐 Mengenkripsi teks...");
     const enc = encryptText(text, pin);
 
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    setTelegramStatus("📤 Mengirim ke Telegram...");
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: cid, text: enc })
     });
 
-    showNotification("Teks terenkripsi terkirim");
+    if (res.ok) {
+        setTelegramStatus("✔ Pesan terenkripsi berhasil terkirim!");
+        showNotification("Teks terkirim");
+    } else {
+        setTelegramStatus("❌ Gagal mengirim pesan!");
+    }
 });
 
+// SEND FILE
 document.getElementById("send-file").addEventListener("click", async () => {
     const fileInput = document.getElementById("telegram-file-input");
     const pin = parseInt(localStorage.getItem("pin"));
     const cid = localStorage.getItem("chatId");
 
-    if (!fileInput.files[0] || !pin || !cid)
-        return showNotification("File / PIN / Chat ID belum ada");
+    if (!fileInput.files[0] || !pin || !cid) {
+        return setTelegramStatus("❌ File / PIN / Chat ID belum lengkap");
+    }
 
     const file = fileInput.files[0];
     const reader = new FileReader();
 
+    setTelegramStatus("📄 Membaca file...");
+
     reader.onload = async e => {
         const bytes = new Uint8Array(e.target.result);
+
+        setTelegramStatus("🔐 Mengenkripsi file...");
         const encrypted = encryptBytes(bytes, pin);
         const blob = new Blob([encrypted], { type: "text/plain" });
+
+        setTelegramStatus("📤 Mengirim file terenkripsi ke Telegram...");
 
         const form = new FormData();
         form.append("chat_id", cid);
         form.append("document", blob, file.name + ".enc");
 
-        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
             method: "POST",
             body: form
         });
 
-        showNotification("File terenkripsi terkirim");
+        if (res.ok) {
+            setTelegramStatus("✔ File terenkripsi berhasil terkirim!");
+            showNotification("File terkirim");
+        } else {
+            setTelegramStatus("❌ Gagal mengirim file!");
+        }
     };
 
     reader.readAsArrayBuffer(file);
