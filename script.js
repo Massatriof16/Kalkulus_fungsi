@@ -4,7 +4,7 @@
 const a = 11;
 const n = 256;
 const BOT_TOKEN = "7974427435:AAHsFppNpcM6Qb4J8iSbRFcI8Cph8tJA8tc"; // kamu isi sendiri
-
+//jsjjs
 /********************************************************************
  * GCD
  ********************************************************************/
@@ -247,7 +247,7 @@ document.getElementById("decrypt-file").addEventListener("click", () => {
         fill.style.width = "50%";
         status.textContent = "Mendekripsi...";
 
-        const text = new TextDecoder().decode(new Uint8Array(e.target.result));
+        const text = e.target.result; // Base64 string
         const decryptedBytes = decryptBytes(text, pin);
 
         if (!decryptedBytes) {
@@ -267,7 +267,7 @@ document.getElementById("decrypt-file").addEventListener("click", () => {
         document.getElementById("decrypt-file-output").appendChild(link);
     };
 
-    reader.readAsArrayBuffer(file);
+    reader.readAsText(file); // FIX TERPENTING
 });
 
 /********************************************************************
