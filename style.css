@@ -6,6 +6,16 @@ body {
     color: #333;
     min-height: 100vh;
 }
+#about-section p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #333;
+}
+#howto-section p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #333;
+}
 
 .container {
     max-width: 900px;

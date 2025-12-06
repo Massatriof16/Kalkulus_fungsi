@@ -11,12 +11,39 @@
         <h1>Aplikasi Kriptografi Web</h1>
         <hr class="divider">
         <div class="tab-navigation">
-            <button class="tab-button active" data-tab="text">Enkripsi & Dekripsi Teks</button>
+            <button class="tab-button active" data-tab="about">About</button>
+            <button class="tab-button" data-tab="text">Enkripsi & Dekripsi Teks</button>
             <button class="tab-button" data-tab="file">Enkripsi & Dekripsi File</button>
             <button class="tab-button" data-tab="telegram">Kirim Pesan via Bot Telegram</button>
         </div>
         
-        <div id="text-tab" class="tab-content active">
+        <div id="about-tab" class="tab-content active">
+        <div class="card" id=about-section>
+            <h2> TENTANG PROJECT</h2><br>
+            <p> Proyek ini merupakan mini riset yang bertujuan untuk membuat sistem enkripsi dan dekripsi sederhana menggunakan metode affine cipher. Sistem ini mampu mengenkripsi dan mendekripsi teks maupun file, serta mendukung pengiriman data terenkripsi melalui Telegram</p>
+        </div>
+         <div class="card" id=howto-section>
+             <h2>CARA PENGGUNAAN</h2><br>
+             <p> <b>Encrypt & Decrypt Teks / file : </b> <br>
+                 1. Atur Pin dan ingat pin sebagai encrypt atau decrypt (akan berlaku disemua fitur)<br>
+                 2. Masukkan teks biasa atau upload file Ke tabel encrypt atau pun decrypt<br>
+                 3. Tekan Tombol Encrypt atau Decrypt untuk menghasilkan output <br>
+                 4. Pastikan Pin untuk encrypt dan decrypt adalah sama sehingga bisa meghasilkan encrypt dan decrypt yang tepat <br>
+                 5. Hasil Output teks akan keluar di bawah dan dapat disalin <br>
+                 6. Output File akan muncul tempat downlod di bawah tombol <br>
+                 <br>
+                 <b>Kirim pesan Teks atau File melalui Telegram : </b> <br>
+                 1. buka telegram dan gunakan pencarian, cari "Rose" jika ditemukan buka Lalu tekan tombol start <br>
+                 2. kirim pesan /id atau /id @username, Rose akan memberi tahu id mu atau id dari username yang kamu berikan <br>
+                 3. cari @encodec_bot setelah ditemukan buka dan tekan tombol start<br>
+                 4. Kembali ke web Masukkan Id target tujuan yang diberikan oleh Rose <br>
+                 5. Masukkan teks atau upload file untuk melakukan kiriman teks atau file hasil encrypt ke tujuan id anda
+                 
+             </p>
+         </div>
+        </div>
+        
+        <div id="text-tab" class="tab-content">
             <div class="card">
                 <h2>PIN Management</h2>
                 <input type="number" id="pin-input" placeholder="Masukkan PIN (angka)">
@@ -40,6 +67,8 @@
                 <button id="clear-output" class="btn-secondary">Clear</button>
             </div>
         </div>
+        
+        
         
         <div id="file-tab" class="tab-content">
             <div class="card">
