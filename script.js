@@ -213,8 +213,18 @@ document.getElementById("encrypt-file").addEventListener("click", () => {
         fill.style.width = "100%";
         status.textContent = "Selesai";
 
+        const binary = atob(encrypted);
+        const len = binary.length;
+        const bytesOut = new Uint8Array(len);
+
+        for (let i = 0; i < len; i++) {
+            bytesOut[i] = binary.charCodeAt(i);
+        }
+
+        const blob = new Blob([bytesOut], { type: "application/octet-stream" });
+
         const link = document.createElement("a");
-        link.href = "data:application/octet-stream;base64," + encrypted;
+        link.href = URL.createObjectURL(blob);
         link.download = file.name + ".enc";
         link.textContent = "Download file terenkripsi";
         document.getElementById("encrypt-file-output").innerHTML = "";
