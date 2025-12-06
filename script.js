@@ -195,14 +195,33 @@ document.getElementById("encrypt-file").addEventListener("click", () => {
     const file = input.files[0];
     const reader = new FileReader();
 
+    // Progress UI
+    const bar = document.getElementById("encrypt-progress");
+    const fill = document.getElementById("encrypt-progress-fill");
+    const status = document.getElementById("encrypt-status");
+
+    bar.style.display = "block";
+    fill.style.width = "0%";
+    status.textContent = "📄 Membaca file...";
+
+    // Step 1 — Read file
     reader.onload = e => {
+        fill.style.width = "40%";
+        status.textContent = "🔐 Mengenkripsi...";
+
         const bytes = new Uint8Array(e.target.result);
 
-        // hasil base64
+        // Step 2 — Encrypt
         const encrypted = encryptBytes(bytes, pin);
 
-        // simpan sebagai text agar semua browser mendukung
+        fill.style.width = "80%";
+        status.textContent = "📦 Menyiapkan file...";
+
+        // Step 3 — Export Base64 as text file
         const blob = new Blob([encrypted], { type: "text/plain" });
+
+        fill.style.width = "100%";
+        status.textContent = "✔ Selesai";
 
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
@@ -227,15 +246,37 @@ document.getElementById("decrypt-file").addEventListener("click", () => {
     const file = input.files[0];
     const reader = new FileReader();
 
-    reader.onload = e => {
-        const base64text = e.target.result; // string base64
+    // Progress UI
+    const bar = document.getElementById("decrypt-progress");
+    const fill = document.getElementById("decrypt-progress-fill");
+    const status = document.getElementById("decrypt-status");
 
+    bar.style.display = "block";
+    fill.style.width = "0%";
+    status.textContent = "📄 Membaca file...";
+
+    // Step 1 — Read encrypted Base64
+    reader.onload = e => {
+        fill.style.width = "40%";
+        status.textContent = "🔓 Mendekripsi...";
+
+        const base64text = e.target.result;
         const decryptedBytes = decryptBytes(base64text, pin);
+
         if (!decryptedBytes) {
+            status.textContent = "❌ Gagal — File atau PIN salah";
             return showNotification("File tidak valid atau PIN salah");
         }
 
+        fill.style.width = "80%";
+        status.textContent = "📦 Menyiapkan file...";
+
+        // Step 2 — Convert to Blob
         const blob = new Blob([decryptedBytes], { type: "application/octet-stream" });
+
+        fill.style.width = "100%";
+        status.textContent = "✔ Selesai";
+
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = file.name.replace(".enc", "");
@@ -245,7 +286,7 @@ document.getElementById("decrypt-file").addEventListener("click", () => {
         document.getElementById("decrypt-file-output").appendChild(link);
     };
 
-    reader.readAsText(file); // FIX TERPENTING
+    reader.readAsText(file); // PENTING: agar Base64 aman
 });
 
 /********************************************************************
