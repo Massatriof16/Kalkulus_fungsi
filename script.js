@@ -1,371 +1,264 @@
-/********************************************************************
- * KONSTANTA
- ********************************************************************/
-const a = 11;
-const n = 256;
-const BOT_TOKEN = "7974427435:AAHsFppNpcM6Qb4J8iSbRFcI8Cph8tJA8tc"; // kamu isi sendiri
+// script.js (FINAL FIXED STABLE VERSION)
+// Affine Encrypt/Decrypt + File Encryption (Base64 Text) + Telegram Bot Send
 
-/********************************************************************
- * GCD
- ********************************************************************/
+"use strict";
+
+/* ==========================================
+   CONFIG
+========================================== */
+const A = 11;      // nilai a (harus coprime dengan 256)
+const N = 256;     // modulus byte
+const A_INV = modInv(A, N);
+
+// Jangan taruh BOT_TOKEN di repo publik (bahaya!)
+const BOT_TOKEN = "";  // isi hanya saat testing lokal
+
+/* ==========================================
+   MATH & BASE64 HELPERS
+========================================== */
 function gcd(a, b) {
-    while (b !== 0) {
-        let t = b;
-        b = a % b;
-        a = t;
-    }
-    return a;
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) { const t = a % b; a = b; b = t; }
+  return a;
 }
 
-/********************************************************************
- * MODULAR INVERSE
- ********************************************************************/
-function modInverse(a, m) {
-    let m0 = m;
-    let y = 0, x = 1;
-    if (m === 1) return 0;
-    while (a > 1) {
-        let q = Math.floor(a / m);
-        let t = m;
-        m = a % m;
-        a = t;
-        t = y;
-        y = x - q * y;
-        x = t;
-    }
-    if (x < 0) x += m0;
-    return x;
+function modInv(a, n) {
+  a = ((a % n) + n) % n;
+  let t = 0, newT = 1;
+  let r = n, newR = a;
+
+  while (newR !== 0) {
+    const q = Math.floor(r / newR);
+    [t, newT] = [newT, t - q * newT];
+    [r, newR] = [newR, r - q * newR];
+  }
+  if (r > 1) return null;
+  if (t < 0) t += n;
+  return t % n;
 }
 
-/********************************************************************
- * ENKRIPSI & DEKRIPSI TEKS
- ********************************************************************/
-function encryptText(text, b) {
-    let bytes = new TextEncoder().encode(text);
-    let encrypted = [];
-    for (let byte of bytes) {
-        encrypted.push((a * byte + b) % n);
-    }
-    return btoa(String.fromCharCode(...encrypted));
+function bytesToBase64(bytes) {
+  let bin = "";
+  const part = 0x8000;
+  for (let i = 0; i < bytes.length; i += part) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + part));
+  }
+  return btoa(bin);
 }
 
-function decryptText(base64, b) {
-    try {
-        let encBytes = atob(base64).split("").map(c => c.charCodeAt(0));
-        let invA = modInverse(a, n);
-        let dec = [];
-        for (let byte of encBytes) {
-            dec.push((invA * (byte - b + n)) % n);
-        }
-        return new TextDecoder().decode(new Uint8Array(dec));
-    } catch {
-        return "Error: Encrypted text invalid";
-    }
+function base64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
-/********************************************************************
- * ENKRIPSI & DEKRIPSI BYTES (FILE)
- ********************************************************************/
-function encryptBytes(bytes, b) {
-    let enc = [];
-    for (let byte of bytes) {
-        enc.push((a * byte + b) % n);
-    }
-    return btoa(String.fromCharCode(...enc));
+function textToBytes(t) { return new TextEncoder().encode(t); }
+function bytesToText(b) { return new TextDecoder().decode(b); }
+
+/* ==========================================
+   AFFINE ENCRYPT / DECRYPT
+========================================== */
+function encryptBytes(bytes, a, b) {
+  const out = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++)
+    out[i] = (a * bytes[i] + b) % 256;
+  return out;
 }
 
-function decryptBytes(base64, b) {
-    try {
-        let encBytes = atob(base64).split("").map(c => c.charCodeAt(0));
-        let invA = modInverse(a, n);
-        let dec = [];
-        for (let byte of encBytes) {
-            dec.push((invA * (byte - b + n)) % n);
-        }
-        return new Uint8Array(dec);
-    } catch {
-        return null;
-    }
+function decryptBytes(bytes, a, b) {
+  const aInv = modInv(a, 256);
+  const out = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    const t = ((bytes[i] - b) % 256 + 256) % 256;
+    out[i] = (aInv * t) % 256;
+  }
+  return out;
 }
 
-/********************************************************************
- * NOTIFIKASI
- ********************************************************************/
-function showNotification(msg) {
-    const n = document.getElementById("notification");
-    n.textContent = msg;
-    n.style.display = "block";
-    setTimeout(() => n.style.display = "none", 3000);
+/* ==========================================
+   UTILITIES
+========================================== */
+function $(id) { return document.querySelector(id); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function setProgress(p) {
+  const bar = $("#progressBar");
+  if (bar) bar.style.width = p + "%";
 }
 
-/********************************************************************
- * LOAD LOCAL STORAGE
- ********************************************************************/
-function loadFromStorage() {
-    const pin = localStorage.getItem("pin");
-    const chatId = localStorage.getItem("chatId");
-
-    if (pin) {
-        document.getElementById("pin-input").value = pin;
-        document.getElementById("file-pin-input").value = pin;
-        document.getElementById("telegram-pin-input").value = pin;
-    }
-
-    if (chatId) {
-        document.getElementById("chat-id-input").value = chatId;
-    }
+function parsePinFrom(id) {
+  let val = $("#" + id).value;
+  if (val === "" || val === null) return null;
+  val = parseInt(val);
+  if (isNaN(val)) return null;
+  return val & 0xFF;
 }
 
-/********************************************************************
- * TAB NAVIGATION
- ********************************************************************/
-document.querySelectorAll(".tab-button").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
-        document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+/* ==========================================
+   TEXT MODE
+========================================== */
+function encryptText() {
+  const b = parsePinFrom("pinText");
+  if (b === null) return alert("Isi PIN (b) dulu.");
 
-        btn.classList.add("active");
-        const tabId = btn.dataset.tab + "-tab";
-        document.getElementById(tabId).classList.add("active");
-    });
-});
-
-/********************************************************************
- * PIN MANAGEMENT
- ********************************************************************/
-document.getElementById("save-pin").addEventListener("click", () => {
-    const pin = document.getElementById("pin-input").value;
-    if (!pin) return showNotification("PIN tidak boleh kosong");
-
-    localStorage.setItem("pin", pin);
-    loadFromStorage();
-    showNotification("PIN tersimpan");
-});
-
-document.getElementById("reset-pin").addEventListener("click", () => {
-    localStorage.removeItem("pin");
-    loadFromStorage();
-    showNotification("PIN direset");
-});
-
-/********************************************************************
- * TEXT ENCRYPT / DECRYPT
- ********************************************************************/
-document.getElementById("encrypt-text").addEventListener("click", () => {
-    const pin = parseInt(localStorage.getItem("pin"));
-    const text = document.getElementById("encrypt-text-input").value;
-    if (!pin) return showNotification("PIN belum disimpan");
-
-    document.getElementById("output-text").value = encryptText(text, pin);
-    showNotification("Teks terenkripsi");
-});
-
-document.getElementById("decrypt-text").addEventListener("click", () => {
-    const pin = parseInt(localStorage.getItem("pin"));
-    const text = document.getElementById("decrypt-text-input").value;
-    if (!pin) return showNotification("PIN belum disimpan");
-
-    document.getElementById("output-text").value = decryptText(text, pin);
-    showNotification("Teks terdekripsi");
-});
-
-/********************************************************************
- * COPY & CLEAR
- ********************************************************************/
-document.getElementById("copy-output").addEventListener("click", () => {
-    const out = document.getElementById("output-text");
-    out.select();
-    document.execCommand("copy");
-    showNotification("Output dicopy");
-});
-
-document.getElementById("clear-output").addEventListener("click", () => {
-    document.getElementById("output-text").value = "";
-    showNotification("Output dibersihkan");
-});
-
-/********************************************************************
- * ENKRIPSI FILE
- ********************************************************************/
-document.getElementById("encrypt-file").addEventListener("click", () => {
-    const input = document.getElementById("encrypt-file-input");
-    const pin = parseInt(localStorage.getItem("pin"));
-    if (!input.files[0] || !pin) return showNotification("File atau PIN belum ada");
-
-    const file = input.files[0];
-    const reader = new FileReader();
-
-    const bar = document.getElementById("encrypt-progress");
-    const fill = document.getElementById("encrypt-progress-fill");
-    const status = document.getElementById("encrypt-status");
-
-    bar.style.display = "block";
-    fill.style.width = "0%";
-    status.textContent = "Membaca file...";
-
-    reader.onload = e => {
-        fill.style.width = "50%";
-        status.textContent = "Mengenkripsi...";
-
-        const bytes = new Uint8Array(e.target.result);
-        const encrypted = encryptBytes(bytes, pin);
-
-        fill.style.width = "100%";
-        status.textContent = "Selesai";
-
-        const link = document.createElement("a");
-        link.href = "data:application/octet-stream;base64," + encrypted;
-        link.download = file.name + ".enc";
-        link.textContent = "Download file terenkripsi";
-        document.getElementById("encrypt-file-output").innerHTML = "";
-        document.getElementById("encrypt-file-output").appendChild(link);
-    };
-
-    reader.readAsArrayBuffer(file);
-});
-
-/********************************************************************
- * DEKRIPSI FILE
- ********************************************************************/
-document.getElementById("decrypt-file").addEventListener("click", () => {
-    const input = document.getElementById("decrypt-file-input");
-    const pin = parseInt(localStorage.getItem("pin"));
-    if (!input.files[0] || !pin) return showNotification("File atau PIN belum ada");
-
-    const file = input.files[0];
-    const reader = new FileReader();
-
-    const bar = document.getElementById("decrypt-progress");
-    const fill = document.getElementById("decrypt-progress-fill");
-    const status = document.getElementById("decrypt-status");
-
-    bar.style.display = "block";
-    fill.style.width = "0%";
-    status.textContent = "Membaca file...";
-
-    reader.onload = e => {
-        fill.style.width = "50%";
-        status.textContent = "Mendekripsi...";
-
-        const text = new TextDecoder().decode(new Uint8Array(e.target.result));
-        const decryptedBytes = decryptBytes(text, pin);
-
-        if (!decryptedBytes) {
-            return showNotification("File tidak valid atau PIN salah");
-        }
-
-        fill.style.width = "100%";
-        status.textContent = "Selesai";
-
-        const blob = new Blob([decryptedBytes], { type: "application/octet-stream" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = file.name.replace(".enc", "");
-        link.textContent = "Download file terdekripsi";
-
-        document.getElementById("decrypt-file-output").innerHTML = "";
-        document.getElementById("decrypt-file-output").appendChild(link);
-    };
-
-    reader.readAsArrayBuffer(file);
-});
-
-/********************************************************************
- * TELEGRAM (KIRIM TEKS & FILE) — Dengan Status Progress Lengkap
- ********************************************************************/
-function setTelegramStatus(msg) {
-    document.getElementById("telegram-status").textContent = msg;
+  const plain = $("#inputEncryptText").value;
+  const enc = encryptBytes(textToBytes(plain), A, b);
+  $("#outputText").innerText = bytesToBase64(enc);
 }
 
-// Simpan Chat ID
-document.getElementById("save-chat-id").addEventListener("click", () => {
-    const cid = document.getElementById("chat-id-input").value;
-    localStorage.setItem("chatId", cid);
-    setTelegramStatus("Chat ID tersimpan ✔");
-    showNotification("Chat ID tersimpan");
+function decryptText() {
+  const b = parsePinFrom("pinText");
+  if (b === null) return alert("Isi PIN (b) dulu.");
+
+  const base64 = $("#inputDecryptText").value.trim();
+  try {
+    const enc = base64ToBytes(base64);
+    const dec = decryptBytes(enc, A, b);
+    $("#outputText").innerText = bytesToText(dec);
+  } catch {
+    alert("Ciphertext tidak valid atau PIN salah.");
+  }
+}
+
+/* ==========================================
+   FILE MODE (CHUNKED + BASE64)
+========================================== */
+async function encryptFile() {
+  const file = $("#fileEncrypt").files[0];
+  const b = parsePinFrom("pinFile");
+  if (!file) return alert("Pilih file!");
+  if (b === null) return alert("Isi PIN!");
+
+  setProgress(0);
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+
+  const chunk = 64 * 1024;
+  const parts = [];
+  for (let i = 0; i < bytes.length; i += chunk) {
+    const slice = bytes.subarray(i, i + chunk);
+    parts.push(encryptBytes(slice, A, b));
+    setProgress(Math.floor((i + slice.length) / bytes.length * 100));
+    await sleep(5);
+  }
+
+  const total = parts.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(total);
+  let pos = 0;
+  for (const p of parts) { out.set(p, pos); pos += p.length; }
+
+  const base64 = bytesToBase64(out);
+  const blob = new Blob([base64], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name + ".enc.txt";
+  a.click();
+
+  URL.revokeObjectURL(url);
+  setProgress(100);
+}
+
+async function decryptFile() {
+  const file = $("#fileDecrypt").files[0];
+  const b = parsePinFrom("pinFile");
+  if (!file) return alert("Pilih file!");
+  if (b === null) return alert("Isi PIN!");
+
+  setProgress(0);
+  const base64 = (await file.text()).trim();
+
+  let enc;
+  try { enc = base64ToBytes(base64); }
+  catch { return alert("File terenkripsi rusak."); }
+
+  const chunk = 64 * 1024;
+  const parts = [];
+  for (let i = 0; i < enc.length; i += chunk) {
+    const slice = enc.subarray(i, i + chunk);
+    parts.push(decryptBytes(slice, A, b));
+    setProgress(Math.floor((i + slice.length) / enc.length * 100));
+    await sleep(5);
+  }
+
+  const total = parts.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(total);
+  let pos = 0;
+  for (const p of parts) { out.set(p, pos); pos += p.length; }
+
+  const blob = new Blob([out], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name.replace(/\.enc(\.txt)?$/, "") || (file.name + ".dec");
+  a.click();
+
+  URL.revokeObjectURL(url);
+  setProgress(100);
+}
+
+/* ==========================================
+   TELEGRAM SEND (Ciphertext)
+========================================== */
+async function sendEncryptedText() {
+  const chat = $("#chatId").value;
+  const b = parsePinFrom("pinBot");
+  const plain = $("#botText").value;
+
+  if (!BOT_TOKEN) return alert("BOT_TOKEN kosong");
+  if (!chat) return alert("Masukkan Chat ID");
+  if (b === null) return alert("Pin salah");
+
+  const enc = encryptBytes(textToBytes(plain), A, b);
+  const b64 = bytesToBase64(enc);
+
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chat, text: b64 })
+  });
+}
+
+async function sendEncryptedFile() {
+  const chat = $("#chatId").value;
+  const b = parsePinFrom("pinBot");
+  const f = $("#botFile").files[0];
+
+  if (!BOT_TOKEN) return alert("BOT_TOKEN kosong");
+  if (!chat) return alert("Masukkan Chat ID");
+  if (!f) return alert("Pilih file");
+  if (b === null) return alert("Pin salah");
+
+  const buf = await f.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const enc = encryptBytes(bytes, A, b);
+  const b64 = bytesToBase64(enc);
+
+  const blob = new Blob([b64], { type: "text/plain" });
+
+  const fd = new FormData();
+  fd.append("chat_id", chat);
+  fd.append("document", blob, f.name + ".enc.txt");
+
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+    method: "POST",
+    body: fd
+  });
+}
+
+/* ==========================================
+   BUTTON BINDING
+========================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  $("#encryptTextBtn")?.addEventListener("click", encryptText);
+  $("#decryptTextBtn")?.addEventListener("click", decryptText);
+
+  $("#encryptFileBtn")?.addEventListener("click", encryptFile);
+  $("#decryptFileBtn")?.addEventListener("click", decryptFile);
+
+  $("#sendTgTextBtn")?.addEventListener("click", sendEncryptedText);
+  $("#sendTgFileBtn")?.addEventListener("click", sendEncryptedFile);
 });
-
-// Reset Chat ID
-document.getElementById("reset-chat-id").addEventListener("click", () => {
-    localStorage.removeItem("chatId");
-    document.getElementById("chat-id-input").value = "";
-    setTelegramStatus("Chat ID dihapus ✔");
-    showNotification("Chat ID direset");
-});
-
-// SEND TEXT
-document.getElementById("send-text").addEventListener("click", async () => {
-    const pin = parseInt(localStorage.getItem("pin"));
-    const cid = localStorage.getItem("chatId");
-    const text = document.getElementById("telegram-text-input").value;
-
-    if (!pin || !cid) {
-        return setTelegramStatus("❌ PIN atau Chat ID belum diatur");
-    }
-
-    setTelegramStatus("🔐 Mengenkripsi teks...");
-    const enc = encryptText(text, pin);
-
-    setTelegramStatus("📤 Mengirim ke Telegram...");
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: cid, text: enc })
-    });
-
-    if (res.ok) {
-        setTelegramStatus("✔ Pesan terenkripsi berhasil terkirim!");
-        showNotification("Teks terkirim");
-    } else {
-        setTelegramStatus("❌ Gagal mengirim pesan!");
-    }
-});
-
-// SEND FILE
-document.getElementById("send-file").addEventListener("click", async () => {
-    const fileInput = document.getElementById("telegram-file-input");
-    const pin = parseInt(localStorage.getItem("pin"));
-    const cid = localStorage.getItem("chatId");
-
-    if (!fileInput.files[0] || !pin || !cid) {
-        return setTelegramStatus("❌ File / PIN / Chat ID belum lengkap");
-    }
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    setTelegramStatus("📄 Membaca file...");
-
-    reader.onload = async e => {
-        const bytes = new Uint8Array(e.target.result);
-
-        setTelegramStatus("🔐 Mengenkripsi file...");
-        const encrypted = encryptBytes(bytes, pin);
-        const blob = new Blob([encrypted], { type: "text/plain" });
-
-        setTelegramStatus("📤 Mengirim file terenkripsi ke Telegram...");
-
-        const form = new FormData();
-        form.append("chat_id", cid);
-        form.append("document", blob, file.name + ".enc");
-
-        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
-            method: "POST",
-            body: form
-        });
-
-        if (res.ok) {
-            setTelegramStatus("✔ File terenkripsi berhasil terkirim!");
-            showNotification("File terkirim");
-        } else {
-            setTelegramStatus("❌ Gagal mengirim file!");
-        }
-    };
-
-    reader.readAsArrayBuffer(file);
-});
-
-/********************************************************************
- * INITIAL LOAD
- ********************************************************************/
-loadFromStorage();
