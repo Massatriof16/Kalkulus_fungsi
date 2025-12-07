@@ -20,7 +20,27 @@
         <div id="about-tab" class="tab-content active">
         <div class="card" id=about-section>
             <h2> TENTANG PROJECT</h2><br>
-            <p> Proyek ini merupakan mini riset yang bertujuan untuk membuat sistem enkripsi dan dekripsi sederhana menggunakan metode affine cipher. Sistem ini mampu mengenkripsi dan mendekripsi teks maupun file, serta mendukung pengiriman data terenkripsi melalui Telegram</p>
+<p>
+        Sistem enkripsi pada proyek ini menggunakan konsep Affine Cipher, yaitu salah satu algoritma kriptografi klasik
+        yang berbasis pada operasi aritmatika modular. Algoritma ini bekerja dengan cara mengubah setiap byte atau karakter
+        menjadi bentuk terenkripsi menggunakan persamaan matematika berikut:
+        <br><br>
+        <b>Rumus Enkripsi:</b><br>
+        E(x) = (a × x + b) mod n
+        <br><br>
+        <b>Rumus Dekripsi:</b><br>
+        D(x) = a⁻¹ (x − b) mod n
+        <br><br>
+        Keterangan:
+        <br>• x = nilai byte atau karakter asli
+        <br>• a = kunci tetap (konstanta pengali)
+        <br>• b = kunci geser (diambil dari PIN pengguna)
+        <br>• n = modulo (menggunakan 256 untuk sistem byte)
+        <br>• a⁻¹ = invers modular dari a terhadap n
+        <br><br>
+        Proses dekripsi hanya dapat dilakukan jika nilai a memiliki invers modular terhadap n, sehingga proses enkripsi
+        dan dekripsi dapat berjalan secara benar dan konsisten.
+    </p>
         </div>
          <div class="card" id=howto-section>
              <h2>CARA PENGGUNAAN</h2><br>
@@ -121,7 +141,7 @@
         
         <div id="notification" class="notification"></div>
     </div>
-    <script src="script.js"></script>
+    <script src="script.obf.js"></script>
     <script src="anti.js"></script>
 </body>
 </html>
