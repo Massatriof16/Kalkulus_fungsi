@@ -218,60 +218,44 @@ document.getElementById("clear-output").addEventListener("click", () => {
 /********************************************************************
  * ENKRIPSI FILE
  ********************************************************************/
-document.getElementById("encrypt-file").addEventListener("click", () => {
+document.getElementById("encrypt-file").addEventListener("click", async () => {
     const input = document.getElementById("encrypt-file-input");
     const pin = parseInt(localStorage.getItem("pin"));
-    if (!input.files[0] || !pin) return showNotification("File atau PIN belum ada");
+    if (!input.files[0] || !pin) {
+        alert("File / PIN belum ada!");
+        return;
+    }
 
     const file = input.files[0];
+
     const reader = new FileReader();
+    reader.readAsArrayBuffer(file);
 
-    // Progress UI
-    const bar = document.getElementById("encrypt-progress");
-    const fill = document.getElementById("encrypt-progress-fill");
-    const status = document.getElementById("encrypt-status");
+    reader.onload = () => {
+        const bytes = new Uint8Array(reader.result);
 
-    bar.style.display = "block";
-    fill.style.width = "0%";
-    status.textContent = "📄 Membaca file...";
-
-    reader.onload = e => {
-        fill.style.width = "40%";
+        // Progress UI
+        const status = document.getElementById("encrypt-status");
         status.textContent = "🔐 Mengenkripsi...";
 
-        const bytes = new Uint8Array(e.target.result);
-
-        // base64 dari hasil affine
+        // 1. Affine cipher ke bytes
         const base64 = encryptBytes(bytes, pin);
 
-        // header metadata
-        const header = JSON.stringify({ name: file.name, type: file.type || 'application/octet-stream' });
+        // 2. Custom encode
+        const finalData = customEncode(base64);
 
-        // gabungkan header dan payload (pemisah '::')
-        const combined = header + "::" + base64;
-
-        // custom encode (mapping yang sudah kamu punya)
-        const finalData = customEncode(combined);
-
-        fill.style.width = "80%";
-        status.textContent = "📦 Menyiapkan file...";
-
-        // simpan sebagai text agar browser dan Telegram bisa terima
+        // 3. Simpan
         const blob = new Blob([finalData], { type: "text/plain" });
-
-        fill.style.width = "100%";
-        status.textContent = "✔ Selesai";
-
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = file.name + ".enc"; // simpan ekstensi .enc
+        link.download = file.name + ".enc";
         link.textContent = "Download file terenkripsi";
 
         document.getElementById("encrypt-file-output").innerHTML = "";
         document.getElementById("encrypt-file-output").appendChild(link);
-    };
 
-    reader.readAsArrayBuffer(file);
+        status.textContent = "✅ Selesai";
+    };
 });
 
 /********************************************************************
@@ -280,75 +264,39 @@ document.getElementById("encrypt-file").addEventListener("click", () => {
 document.getElementById("decrypt-file").addEventListener("click", () => {
     const input = document.getElementById("decrypt-file-input");
     const pin = parseInt(localStorage.getItem("pin"));
-    if (!input.files[0] || !pin) return showNotification("File atau PIN belum ada");
+    if (!input.files[0] || !pin) {
+        alert("File / PIN belum ada!");
+        return;
+    }
 
     const file = input.files[0];
+
     const reader = new FileReader();
+    reader.readAsText(file);
 
-    // Progress UI
-    const bar = document.getElementById("decrypt-progress");
-    const fill = document.getElementById("decrypt-progress-fill");
-    const status = document.getElementById("decrypt-status");
+    reader.onload = () => {
+        const encryptedText = reader.result;
 
-    bar.style.display = "block";
-    fill.style.width = "0%";
-    status.textContent = "📄 Membaca file...";
+        document.getElementById("decrypt-status").textContent = "🔓 Mendekripsi...";
 
-    reader.onload = e => {
-        fill.style.width = "40%";
-        status.textContent = "🔓 Mendekripsi...";
+        // 1. decode custom
+        const base64 = customDecode(encryptedText);
 
-        const customText = e.target.result; // string hasil encrypt/custom
-        // reverse the custom encoding to get header::base64
-        const decodedCombined = customDecode(customText);
+        // 2. decrypt bytes
+        const decryptedBytes = decryptBytes(base64, pin);
 
-        // pisahkan header dan payload
-        const sepIndex = decodedCombined.indexOf("::");
-        if (sepIndex === -1) {
-            status.textContent = "❌ Gagal — Format file tidak dikenali";
-            return showNotification("File tidak valid atau format header hilang");
-        }
-
-        const headerStr = decodedCombined.slice(0, sepIndex);
-        const base64part = decodedCombined.slice(sepIndex + 2);
-
-        // parse header json
-        let meta;
-        try {
-            meta = JSON.parse(headerStr);
-        } catch (err) {
-            status.textContent = "❌ Gagal — Header tidak valid";
-            return showNotification("Header file tidak valid");
-        }
-
-        // decrypt base64 -> bytes
-        const decryptedBytes = decryptBytes(base64part, pin);
-        if (!decryptedBytes) {
-            status.textContent = "❌ Gagal — File atau PIN salah";
-            return showNotification("File tidak valid atau PIN salah");
-        }
-
-        fill.style.width = "80%";
-        status.textContent = "📦 Menyiapkan file...";
-
-        // buat blob dengan MIME yang asli
-        const blob = new Blob([decryptedBytes], { type: meta.type || "application/octet-stream" });
-
-        fill.style.width = "100%";
-        status.textContent = "✔ Selesai";
-
+        // 3. simpan file biner
+        const blob = new Blob([decryptedBytes], { type: "application/octet-stream" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        // gunakan nama asli kalau ada, atau fallback
-        const outName = (meta.name && meta.name.replace(/\.enc$/i, "")) || file.name.replace(/\.enc$/i, "");
-        link.download = outName;
-        link.textContent = "Download file terdekripsi";
+        link.download = file.name.replace(".enc", "");
+        link.textContent = "Download file hasil dekripsi";
 
         document.getElementById("decrypt-file-output").innerHTML = "";
         document.getElementById("decrypt-file-output").appendChild(link);
-    };
 
-    reader.readAsText(file); // kita baca sebagai text (karena isinya custom-encoded text)
+        document.getElementById("decrypt-status").textContent = "✅ Selesai";
+    };
 });
 
 /********************************************************************
